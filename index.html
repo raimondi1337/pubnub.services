@@ -1,0 +1,60 @@
+<!--http://pubsub.pubnub.com/publish/pub-c-ba1de273-c2ab-41db-860b-b0dbeca2b680/sub-c-5975fdc6-b456-11e7-895e-c6a8ff6a3d85/0/status/0/{"urinal":"occupied"}-->
+<html>
+  <header>
+    <title>PubNub Services</title>
+  </header>
+  <body>
+    <div class="container">
+        <div class="row justify-content-md-center">
+            <div class="col-sm-6">
+                <div class="card">
+                    <div class="card-header">
+                      Urinal
+                    </div>
+                    <div class="card-block" id="urinal">
+                      Occupied
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="card">
+                    <div class="card-header">
+                      Stall
+                    </div>
+                    <div class="card-block" id="stall">
+                      Occupied
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g=" crossorigin="anonymous"></script>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.16.1.js"></script>
+    <script type="text/javascript">
+      const pubnub = new PubNub({subscribeKey: "sub-c-5975fdc6-b456-11e7-895e-c6a8ff6a3d85"});
+
+      pubnub.subscribe({channels: ['status']});
+      pubnub.history(
+        {
+          channel: 'status',
+          count: 500,
+        },
+        function (status, response) {
+          console.log(response.messages);
+        }
+      );
+      pubnub.addListener({
+        message: function (m){
+          if(m.message.urinal) {
+            $('#urinal').html(m.message.urinal);
+          }
+          if(m.message.stall) {
+            $('#stall').html(m.message.stall);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
