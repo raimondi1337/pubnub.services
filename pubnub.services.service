@@ -1,0 +1,11 @@
+[Unit]
+Description=GPIO App
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python /home/pi/pubnub.services/app.py
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
