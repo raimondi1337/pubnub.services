@@ -1,23 +1,34 @@
 import RPi.GPIO as GPIO 
 import time
+from pubnub.pubnub import PubNub
+from pubnub.pnconfiguration import PNConfiguration
+
+pnconfig = PNConfiguration()
+pnconfig.subscribe_key = 'sub-c-0d172eac-b5da-11e7-bf1e-62e28d924c11'
+pnconfig.publish_key   = 'pub-c-92d545b8-5884-456c-9546-2fd40697fdb8'
+pubnub = PubNub(pnconfig)
 
 LEDPIN    = 12
 SWITCHPIN = 10 
-OPEN      = True 
+STALL_STATUS      = True 
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(LEDPIN, GPIO.OUT)
 GPIO.setup(SWITCHPIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.output(LEDPIN, GPIO.HIGH)
+
+def publish_callback(result, status):
+	print result, status
 	
 while True:
-	if (GPIO.input(SWITCHPIN) == GPIO.LOW and OPEN is False):
-		OPEN = True
+	if (GPIO.input(SWITCHPIN) == GPIO.LOW and STALL_STATUS is False):
+		STALL_STATUS = True
 		GPIO.output(LEDPIN, GPIO.HIGH)
-		print OPEN
+		print STALL_STATUS
+		pubnub.publish().channel('status').message({'stall': STALL_STATUS}).async(publish_callback)
 	
-	if (GPIO.input(SWITCHPIN) == GPIO.HIGH and OPEN is True):
-		OPEN = False
+	if (GPIO.input(SWITCHPIN) == GPIO.HIGH and STALL_STATUS is True):
+		STALL_STATUS = False
 		GPIO.output(LEDPIN, GPIO.LOW)
-		print OPEN
-
+		print STALL_STATUS
+		pubnub.publish().channel('status').message({'stall': STALL_STATUS}).async(publish_callback)
