@@ -1,28 +1,23 @@
-import RPi.GPIO as io
+import RPi.GPIO as GPIO 
 import time
 
-LEDPIN =12 
+LEDPIN    = 12
+SWITCHPIN = 10 
+OPEN      = True 
 
-def setup():
-	io.setmode(io.BOARD)
-	io.setup(LEDPIN, io.OUT)
-	io.output(LEDPIN, io.HIGH)
-
-def blink():
-	while True:
-		io.output(LEDPIN, io.HIGH)
-		time.sleep(1)
-		io.output(LEDPIN, io.LOW)
-		time.sleep(1)
-
-def destroy():
-	io.output(LEDPIN, io.LOW)
-	io.cleanup()
-
-if __name__=="__main__":
-	setup()
-	try:
-		blink()
-	except KeyboardInterrupt:
-		destroy()
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(LEDPIN, GPIO.OUT)
+GPIO.setup(SWITCHPIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.output(LEDPIN, GPIO.HIGH)
+	
+while True:
+	if (GPIO.input(SWITCHPIN) == GPIO.LOW and OPEN is False):
+		OPEN = True
+		GPIO.output(LEDPIN, GPIO.HIGH)
+		print OPEN
+	
+	if (GPIO.input(SWITCHPIN) == GPIO.HIGH and OPEN is True):
+		OPEN = False
+		GPIO.output(LEDPIN, GPIO.LOW)
+		print OPEN
 
