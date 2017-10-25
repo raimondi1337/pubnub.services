@@ -1,4 +1,5 @@
 import RPi.GPIO as GPIO 
+
 import time
 from pubnub.pubnub import PubNub
 from pubnub.pnconfiguration import PNConfiguration
@@ -18,17 +19,20 @@ GPIO.setup(SWITCHPIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.output(LEDPIN, GPIO.HIGH)
 
 def publish_callback(result, status):
-	print result, status
+	print result 
 	
-while True:
-	if (GPIO.input(SWITCHPIN) == GPIO.LOW and STALL_STATUS is False):
-		STALL_STATUS = True
-		GPIO.output(LEDPIN, GPIO.HIGH)
-		print STALL_STATUS
-		pubnub.publish().channel('status').message({'stall': STALL_STATUS}).async(publish_callback)
-	
-	if (GPIO.input(SWITCHPIN) == GPIO.HIGH and STALL_STATUS is True):
-		STALL_STATUS = False
-		GPIO.output(LEDPIN, GPIO.LOW)
-		print STALL_STATUS
-		pubnub.publish().channel('status').message({'stall': STALL_STATUS}).async(publish_callback)
+try:
+	while True:
+		if (GPIO.input(SWITCHPIN) == GPIO.LOW and STALL_STATUS is False):
+			STALL_STATUS = True
+			GPIO.output(LEDPIN, GPIO.HIGH)
+			print STALL_STATUS
+			pubnub.publish().channel('status').message({'stall': 'Occupied'}).async(publish_callback)
+		
+		if (GPIO.input(SWITCHPIN) == GPIO.HIGH and STALL_STATUS is True):
+			STALL_STATUS = False
+			GPIO.output(LEDPIN, GPIO.LOW)
+			print STALL_STATUS
+			pubnub.publish().channel('status').message({'stall': 'Vacant'}).async(publish_callback)
+except KeyboardInterrupt:
+	GPIO.cleanup()
