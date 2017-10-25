@@ -4,25 +4,27 @@
     <title>PubNub Services</title>
   </header>
   <body>
-    <div class="container">
-        <div class="row">
-            <div class="col">
+    <div class="container text-center">
+        <div class="row pt-5 justify-content-center">
+            <div class="col-sm-6">
                 <div class="card">
                     <div class="card-header">
-                      Urinal
+                      Current Service Status
                     </div>
-                    <div class="card-block" id="urinal">
-                      Probaby Occupied
+                    <div class="card-block" id="stallStatus">
+                      null
                     </div>
                 </div>
             </div>
-            <div class="col">
+          </div>
+          <div class="row pt-5 justify-content-center">
+            <div class="col-sm-6">
                 <div class="card">
                     <div class="card-header">
-                      Stall
+                      Service Throughput Today
                     </div>
-                    <div class="card-block" id="stall">
-                      Probably Occupied
+                    <div class="card-block" id="stallCount">
+                      null
                     </div>
                 </div>
             </div>
@@ -33,28 +35,65 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g=" crossorigin="anonymous"></script>
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.16.1.js"></script>
     <script type="text/javascript">
-      const pubnub = new PubNub({subscribeKey: "sub-c-5975fdc6-b456-11e7-895e-c6a8ff6a3d85"});
+      const pubnub = new PubNub({subscribeKey: "sub-c-0d172eac-b5da-11e7-bf1e-62e28d924c11"});
+      const now = new Date();
+      const start = now.setHours(0,0,0,0)*10000;
+      let state = [];
 
       pubnub.subscribe({channels: ['status']});
-      pubnub.history(
-        {
-          channel: 'status',
-          count: 500,
-        },
-        function (status, response) {
-          console.log(response.messages);
-        }
-      );
+
+      pubnub.history({
+        channel: 'status'
+      }, function (status, response) {
+        state = response.messages;
+        update();
+      });
+
       pubnub.addListener({
         message: function (m){
-          if(m.message.urinal) {
-            $('#urinal').html(m.message.urinal);
-          }
-          if(m.message.stall) {
-            $('#stall').html(m.message.stall);
-          }
+          let x = {
+            'timetoken': m.timetoken,
+            'entry': m.message
+          };
+          update(x);
         }
       });
+
+      function update(message=null) {
+        if (message) {
+          state.push(message);
+        }
+
+        for (let i=state.length-1;i>=0;i--) {
+          if (state[i].entry.stall) {
+            $('#stallStatus').html(state[i].entry.stall);
+
+            if (state[i].entry.stall == 'Vacant'){
+              $('#stallStatus').toggleClass('bg-success', true);
+            } else {
+              $('#stallStatus').toggleClass('bg-success', false);
+            }
+            if (state[i].entry.stall == 'Occupied'){
+              $('#stallStatus').toggleClass('bg-danger', true);
+            } else {
+              $('#stallStatus').toggleClass('bg-danger', false);
+            }
+            break;
+          }
+        }
+        
+        let stallCount = 'broken';
+
+        /*for (item of state) {
+          if (item.entry.hasOwnProperty('stall')) {
+            if (item.entry.stall == 'Occupied' && item.timetoken > start) {
+              stallCount++;
+            }
+          }
+        }*/
+
+        $('#stallCount').html(stallCount);
+      }
     </script>
   </body>
 </html>
