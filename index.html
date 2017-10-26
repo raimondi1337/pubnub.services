@@ -40,22 +40,43 @@
     let online = false;
     let state = [];
 
+    setInterval(deviceOnline, 1000);
 
-    pubnub.hereNow({
-            channels: ['status'],
-            includeUUIDs: true
-        },
-        function(status, response) {
+    function deviceOnline () {
+      return pubnub.hereNow({
+              channels: ['status'],
+              includeUUIDs: true
+          },
+          function(status, response) {
+            let flag = false;
             for (occupant of response.channels.status.occupants) {
-                console.log(occupant.uuid);
                 if (occupant.uuid == 'device') {
-                    init();
+                  flag = true;
                 }
             }
-        }
-    );
+            
+            if (flag==true && online==false){
+              online = true;
+              init();
+            }
+
+            if(flag==false && online==true){
+              online = false;
+              destroy();
+            }
+          }
+      );
+    }
+
+    function destroy() {
+      console.log('destroy');
+        $('#stallStatus').toggleClass('bg-danger',true);
+        $('#stallStatus').toggleClass('bg-success', false);
+        $('#stallStatus').html('Offline');
+    }
 
     function init() {
+      console.log('init');
         pubnub.subscribe({ channels: ['status'] });
 
         getMessages({
