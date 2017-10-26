@@ -1,40 +1,40 @@
 <!--http://pubsub.pubnub.com/publish/pub-c-ba1de273-c2ab-41db-860b-b0dbeca2b680/sub-c-5975fdc6-b456-11e7-895e-c6a8ff6a3d85/0/status/0/{"urinal":"occupied"}-->
 <html>
 <header>
-    <title>PubNub Services</title>
+  <title>PubNub Services</title>
 </header>
 
 <body>
-    <div class="container text-center">
-        <div class="row pt-5 justify-content-center">
-            <div class="col-sm-6">
-                <div class="card">
-                    <div class="card-header">
-                        Current Service Status
-                    </div>
-                    <div class="card-block bg-danger" id="stallStatus">
-                        Offline
-                    </div>
-                </div>
-            </div>
+  <div class="container text-center">
+    <div class="row pt-5 justify-content-center">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-header">
+            Current Service Status
+          </div>
+          <div class="card-block bg-danger" id="stallStatus">
+            Offline
+          </div>
         </div>
-        <div class="row pt-5 justify-content-center">
-            <div class="col-sm-6">
-                <div class="card">
-                    <div class="card-header">
-                        Service Throughput Today
-                    </div>
-                    <div class="card-block" id="stallCount">
-                        Offline
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g=" crossorigin="anonymous"></script>
-    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.16.1.js"></script>
-    <script type="text/javascript">
+    <div class="row pt-5 justify-content-center">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-header">
+            Service Throughput Today
+          </div>
+          <div class="card-block" id="stallCount">
+            Offline
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g=" crossorigin="anonymous"></script>
+  <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.16.1.js"></script>
+  <script type="text/javascript">
     const pubnub = new PubNub({ subscribeKey: "sub-c-0d172eac-b5da-11e7-bf1e-62e28d924c11" });
     const start = new Date().setHours(0, 0, 0, 0) * 10000;
     let online = false;
@@ -44,164 +44,118 @@
 
     function deviceOnline () {
       return pubnub.hereNow({
-              channels: ['status'],
-              includeUUIDs: true
-          },
-          function(status, response) {
-            let flag = false;
-            for (occupant of response.channels.status.occupants) {
-                if (occupant.uuid == 'device') {
-                  flag = true;
-                }
-            }
-            
-            if (flag==true && online==false){
-              online = true;
-              init();
-            }
-
-            if(flag==false && online==true){
-              online = false;
-              destroy();
-            }
+        channels: ['status'],
+        includeUUIDs: true
+      },
+      function(status, response) {
+        let flag = false;
+        for (occupant of response.channels.status.occupants) {
+          if (occupant.uuid == 'device') {
+            flag = true;
           }
+        }
+        
+        if (flag==true && online==false){
+          online = true;
+          init();
+        }
+
+        if(flag==false && online==true){
+          online = false;
+          destroy();
+        }
+      }
       );
     }
 
     function destroy() {
-      console.log('destroy');
-        $('#stallStatus').toggleClass('bg-danger',true);
-        $('#stallStatus').toggleClass('bg-success', false);
-        $('#stallStatus').html('Offline');
+      $('#stallStatus').toggleClass('bg-danger',true);
+      $('#stallStatus').toggleClass('bg-success', false);
+      $('#stallStatus').html('Offline');
     }
 
     function init() {
-      console.log('init');
-        pubnub.subscribe({ channels: ['status'] });
+      pubnub.subscribe({ channels: ['status'] });
 
-        getMessages({
-            channel: 'status',
-            startToken: start,
-            pagesize: 100,
-            max: 1000
-        }, function(results) {
-            state = results;
-            update();
-        });
+      getMessages({
+        channel: 'status',
+        startToken: start,
+        pagesize: 100,
+        max: 1000
+      }, function(results) {
+        state = results;
+        update();
+      });
 
-        pubnub.addListener({
-            message: function(m) {
-                let x = {
-                    'timetoken': m.timetoken,
-                    'entry': m.message
-                };
-                update(x);
-            }
-        });
+      pubnub.addListener({
+        message: function(m) {
+          let x = {
+            'timetoken': m.timetoken,
+            'entry': m.message
+          };
+          update(x);
+        }
+      });
     }
 
-    // get history from args.start (epoch) until end
     function getMessages(args, callback) {
-        pubnub.history({
-                // search starting from this timetoken
-                start: args.startToken,
-                channel: args.channel,
-                // false - search forwards through the timeline
-                // true - search backwards through the timeline
-                reverse: args.reverse || true,
-                // limit number of messages per request to this value; default/max=100
-                count: args.pagesize,
-                // include each returned message's publish timetoken
-                includeTimetoken: true,
-                // prevents JS from truncating 17 digit timetokens
-                stringifiedTimeToken: true
-            },
-            function(status, response) {
-                // holds the accumulation of resulting messages across all iterations
-                var results = args.results;
-                // the retrieved messages from history for this iteration only
-                var msgs = response.messages;
-                // timetoken of the first message in response
-                var firstTT = response.startTimeToken;
-                // timetoken of the last message in response
-                var lastTT = response.endTimeToken;
-                // if no max results specified, default to 500
-                args.max = !args.max ? 500 : args.max;
+      pubnub.history({
+        start: args.startToken,
+        channel: args.channel,
+        reverse: args.reverse || true,
+        count: args.pagesize,
+        includeTimetoken: true,
+        stringifiedTimeToken: true
+      },
+      function(status, response) {
+        var results = args.results;
+        var msgs = response.messages;
+        var firstTT = response.startTimeToken;
+        var lastTT = response.endTimeToken;
+        args.max = !args.max ? 500 : args.max;
 
-                if (msgs != undefined && msgs.length > 0) {
-                    // display each of the returned messages in browser console
-                    for (var i in msgs) {
-                        msg = msgs[i];
-                        //console.log(msg.entry, msg.timetoken);
-                    }
+        if (msgs != undefined && msgs.length > 0) {
+          if (!results) results = msgs;
+          else args.reverse ? results = results.concat(msgs) : results = msgs.concat(results);
+        }
 
-                    // first iteration, results is undefined, so initialize with first history results
-                    if (!results) results = msgs;
-                    // subsequent iterations, results has previous iterartions' results, so concat
-                    // but concat to end of results if reverse true, otherwise prepend to begining of results
-                    else args.reverse ? results = results.concat(msgs) : results = msgs.concat(results);
-                }
-
-                // show the total messages returned out of the max requested
-                //console.log('total    : ' + results.length + '/' + args.max);
-
-                // we keep asking for more messages if # messages returned by last request is the
-                // same at the pagesize AND we still have reached the total number of messages requested
-                // same as the opposit of !(msgs.length < pagesize || total == max)
-                if (msgs.length == args.pagesize && results.length < args.max) {
-                    getMessages({
-                            channel: args.channel,
-                            max: args.max,
-                            reverse: args.reverse,
-                            pagesize: args.pagesize,
-                            startToken: args.reverse ? lastTT : firstTT,
-                            results: results
-                        },
-                        callback);
-                }
-                // we've reached the end of possible messages to retrieve or hit the 'max' we asked for
-                // so invoke the callback to the original caller of getMessages providing the total message results
-                else callback(results);
-            }
-        );
+        if (msgs.length == args.pagesize && results.length < args.max) {
+          getMessages({
+            channel: args.channel,
+            max: args.max,
+            reverse: args.reverse,
+            pagesize: args.pagesize,
+            startToken: args.reverse ? lastTT : firstTT,
+            results: results
+          },
+          callback);
+        } else callback(results);
+      }
+      );
     }
 
     function update(message = null) {
-        if (message) {
-            state.push(message);
+      if (message) {
+        state.push(message);
+      }
+
+      for (let i = state.length - 1; i >= 0; i--) {
+        if (state[i].entry.stall) { $('#stallStatus').html(state[i].entry.stall); if (state[i].entry.stall == 'Vacant') { $('#stallStatus').toggleClass('bg-success', true); } else { $('#stallStatus').toggleClass('bg-success', false); } if (state[i].entry.stall == 'Occupied') { $('#stallStatus').toggleClass('bg-danger', true); } else { $('#stallStatus').toggleClass('bg-danger', false); } break; }
+      }
+
+      let stallCount = 0;
+
+      for (item of state) {
+        if (item.entry.hasOwnProperty('stall')) {
+          if (item.entry.stall == 'Occupied') {
+            stallCount++;
+          }
         }
+      }
 
-        for (let i = state.length - 1; i >= 0; i--) {
-            if (state[i].entry.stall) {
-                $('#stallStatus').html(state[i].entry.stall);
-
-                if (state[i].entry.stall == 'Vacant') {
-                    $('#stallStatus').toggleClass('bg-success', true);
-                } else {
-                    $('#stallStatus').toggleClass('bg-success', false);
-                }
-                if (state[i].entry.stall == 'Occupied') {
-                    $('#stallStatus').toggleClass('bg-danger', true);
-                } else {
-                    $('#stallStatus').toggleClass('bg-danger', false);
-                }
-                break;
-            }
-        }
-
-        let stallCount = 'broken';
-
-        for (item of state) {
-            if (item.entry.hasOwnProperty('stall')) {
-                if (item.entry.stall == 'Occupied') {
-                    stallCount++;
-                }
-            }
-        }
-
-        $('#stallCount').html(stallCount);
+      $('#stallCount').html(stallCount);
     }
-    </script>
+  </script>
 </body>
 
 </html>
