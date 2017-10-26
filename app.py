@@ -8,7 +8,7 @@ pnconfig = PNConfiguration()
 pnconfig.subscribe_key = 'sub-c-0d172eac-b5da-11e7-bf1e-62e28d924c11'
 pnconfig.publish_key   = 'pub-c-92d545b8-5884-456c-9546-2fd40697fdb8'
 pnconfig.uuid = 'device'
-pnconfig.set_presence_timeout_with_custom_interval(60,10)
+pnconfig.set_presence_timeout_with_custom_interval(45,15)
 pubnub = PubNub(pnconfig)
 
 pubnub.subscribe().channels('status').execute()
