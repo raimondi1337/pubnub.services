@@ -6,34 +6,120 @@
 
 <body>
   <div class="container text-center">
-    <div class="row pt-5 justify-content-center">
-      <div class="col-sm-6">
+    <div class="row justify-content-center">
+      <div class="col-sm-12">
         <div class="card">
           <div class="card-header">
-            Current Service Status
+            Service Status
           </div>
-          <div class="card-block bg-danger" id="stallStatus">
-            Offline
+          <div class="card-block" id="serviceStatus">
+            Unknown
           </div>
         </div>
       </div>
     </div>
-    <div class="row pt-5 justify-content-center">
+    <div class="row justify-content-center">
       <div class="col-sm-6">
         <div class="card">
           <div class="card-header">
-            Service Throughput Today
+            Monitor Status
           </div>
-          <div class="card-block" id="stallCount">
-            Offline
+          <div class="card-block" id="monitorStatus">
+            Unknown
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-header">
+            Monitor Uptime Today
+          </div>
+          <div class="card-block" id="monitorUptimeToday">
+            Unknown
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-header">
+            Throughput Today
+          </div>
+          <div class="card-block" id="serviceCount">
+            Unknown
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-header">
+            Average Time (beta)
+          </div>
+          <div class="card-block" id="serviceAverage">
+            Unknown
           </div>
         </div>
       </div>
     </div>
   </div>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/hack-font/build/web/hack-subset.css">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
   <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha256-k2WSCIexGzOj3Euiig+TlR8gA0EmPjuc79OEeY5L45g=" crossorigin="anonymous"></script>
   <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.16.1.js"></script>
+  <style type="text/css">
+    /* For McKenzie */
+    * {
+      font-family: Hack, monospace;
+      font-weight: bold;
+      font-size: 24px; 
+    }
+    body {
+      background-color: #101610;
+    }
+
+    .card {
+      background-color: #323232;
+      border-color: #000000;
+      border-radius: 3px;
+      margin: 25px;
+      padding: 0;
+    }
+
+    .row:first-child {
+      margin-top: 25px;
+    } 
+
+    .card-header {
+      color: #CCCCCC;
+      background-color: #323232;
+      border-color: #000000;
+      border-radius: 3px 0;
+    }
+
+    .card-block{
+      color: #777777;
+      background-color: #323232;
+      border-color: #000000;
+      border-radius: 0 0 3px 3px;
+    }
+
+    .col-sm-6, .col-sm-12 {
+      padding: 0;
+    }
+
+    #serviceStatus {
+      padding: 100px;
+    }
+
+    .success {
+      background-color: #64FF64;
+    }
+
+    .failure {
+      background-color: #FF6464;
+    }
+    </style>
   <script type="text/javascript">
     const pubnub = new PubNub({ subscribeKey: "sub-c-0d172eac-b5da-11e7-bf1e-62e28d924c11" });
     const start = new Date().setHours(0, 0, 0, 0) * 10000;
@@ -42,7 +128,7 @@
 
     setInterval(deviceOnline, 1000);
 
-    function deviceOnline () {
+    function deviceOnline() {
       return pubnub.hereNow({
         channels: ['status'],
         includeUUIDs: true
@@ -54,13 +140,13 @@
             flag = true;
           }
         }
-        
-        if (flag==true && online==false){
+
+        if (flag == true && online == false) {
           online = true;
           init();
         }
 
-        if(flag==false && online==true){
+        if (flag == false && online == true) {
           online = false;
           destroy();
         }
@@ -69,12 +155,21 @@
     }
 
     function destroy() {
-      $('#stallStatus').toggleClass('bg-danger',true);
-      $('#stallStatus').toggleClass('bg-success', false);
-      $('#stallStatus').html('Offline');
+      $('#serviceStatus').toggleClass('failure', false);
+      $('#serviceStatus').toggleClass('success', false);
+      $('#serviceStatus').html('Unknown');
+
+      $('#monitorStatus').toggleClass('failure', true);
+      $('#monitorStatus').toggleClass('success', false);
+      $('#monitorStatus').html('Offline');
     }
 
+    // initialize the state and UI
     function init() {
+      $('#monitorStatus').toggleClass('failure', false);
+      $('#monitorStatus').toggleClass('success', true);
+      $('#monitorStatus').html('Online');
+
       pubnub.subscribe({ channels: ['status'] });
 
       getMessages({
@@ -98,6 +193,7 @@
       });
     }
 
+    // helper function to get over 100 history messages
     function getMessages(args, callback) {
       pubnub.history({
         start: args.startToken,
@@ -134,26 +230,53 @@
       );
     }
 
+    // helper function to compute average time
+    function compute(){
+      let total = 0;
+      let items = 0;
+
+      for (let i=0;i<=state.length-2;i++) {
+        if (state[i].entry.stall == 'Occupied' && state[i+1].entry.stall == 'Vacant'){
+          let start = new Date(state[i].timetoken/10000);
+          let end = new Date(state[i+1].timetoken/10000);
+          let duration = (end.getTime()-start.getTime())/60000;
+          if (duration > .5) {
+            total += duration;
+            items ++;
+          }
+        }
+      }
+
+      return({average: Math.round(10*(total/items))/10, count: items});
+    }
+
+    // update the state and UI
     function update(message = null) {
       if (message) {
         state.push(message);
       }
 
       for (let i = state.length - 1; i >= 0; i--) {
-        if (state[i].entry.stall) { $('#stallStatus').html(state[i].entry.stall); if (state[i].entry.stall == 'Vacant') { $('#stallStatus').toggleClass('bg-success', true); } else { $('#stallStatus').toggleClass('bg-success', false); } if (state[i].entry.stall == 'Occupied') { $('#stallStatus').toggleClass('bg-danger', true); } else { $('#stallStatus').toggleClass('bg-danger', false); } break; }
-      }
-
-      let stallCount = 0;
-
-      for (item of state) {
-        if (item.entry.hasOwnProperty('stall')) {
-          if (item.entry.stall == 'Occupied') {
-            stallCount++;
+        if (state[i].entry.stall) {
+          $('#serviceStatus').html(state[i].entry.stall);
+          if (state[i].entry.stall == 'Vacant') {
+            $('#serviceStatus').toggleClass('success', true);
+          } else {
+            $('#serviceStatus').toggleClass('success', false);
           }
+
+          if (state[i].entry.stall == 'Occupied') {
+            $('#serviceStatus').toggleClass('failure', true);
+          } else {
+            $('#serviceStatus').toggleClass('failure', false);
+          }
+          break;
         }
       }
 
-      $('#stallCount').html(stallCount);
+      let stats = compute();
+      $('#serviceCount').html(stats.count);
+      $('#serviceAverage').html(stats.average + ' minutes');
     }
   </script>
 </body>
