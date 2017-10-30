@@ -1,6 +1,5 @@
 import RPi.GPIO as GPIO 
 
-import time
 from pubnub.pubnub import PubNub
 from pubnub.pnconfiguration import PNConfiguration
 
