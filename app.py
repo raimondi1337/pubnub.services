@@ -12,9 +12,9 @@ pubnub = PubNub(pnconfig)
 
 pubnub.subscribe().channels('status').execute()
 
-LEDPIN    = 12
-SWITCHPIN = 10 
-STALL_STATUS      = True 
+LEDPIN       = 12
+SWITCHPIN    = 10 
+STALL_STATUS = True 
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(LEDPIN, GPIO.OUT)

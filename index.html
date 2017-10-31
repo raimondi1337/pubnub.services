@@ -1,8 +1,8 @@
-<!--http://pubsub.pubnub.com/publish/pub-c-ba1de273-c2ab-41db-860b-b0dbeca2b680/sub-c-5975fdc6-b456-11e7-895e-c6a8ff6a3d85/0/status/0/{"urinal":"occupied"}-->
+<!DOCTYPE html>
 <html>
-<header>
+<head>
   <title>PubNub Services</title>
-</header>
+</head>
 
 <body>
   <div class="container">
@@ -65,9 +65,9 @@
     <div class="row bugs">
       <div class="col-sm-12">
         <ul>
-          <li>still tied to battery power</li>
-          <li>daily stats don't reset at the beginning of a new day</li>
-          <li>clients do not refresh themselves when the client updates</li>
+          <li class='strike'>still tied to battery power</li>
+          <li class='strike'>daily stats don't reset at the beginning of a new day</li>
+          <li class='strike'>clients do not refresh themselves when the client updates</li>
           <li>average time and throughput not 100% verified</li>
         </ul>
       </div>
@@ -135,13 +135,21 @@
       color: #64FF64;
       opacity: 0.5;
     }
+
+    .strike {
+      text-decoration: line-through;
+    }
     </style>
   <script type="text/javascript">
     const pubnub = new PubNub({ subscribeKey: "sub-c-0d172eac-b5da-11e7-bf1e-62e28d924c11" });
-    const start = new Date().setHours(0, 0, 0, 0) * 10000;
+    let start = new Date().setHours(0, 0, 0, 0) * 10000;
+    let end = new Date().setHours(23, 59, 59, 999) * 10000;
+    let now = (new Date()).getTime() * 10000;
+    let wait = (end/10000) - (now/10000) - 14400000; // milliseconds until 4am
     let online = false;
     let state = [];
 
+    setTimeout(location.reload, wait);
     setInterval(deviceOnline, 1000);
 
     function deviceOnline() {
@@ -151,7 +159,7 @@
       },
       function(status, response) {
         let flag = false;
-        for (occupant of response.channels.status.occupants) {
+        for (let occupant of response.channels.status.occupants) {
           if (occupant.uuid == 'device') {
             flag = true;
           }
@@ -253,10 +261,10 @@
 
       for (let i=0;i<=state.length-2;i++) {
         if (state[i].entry.stall == 'Occupied' && state[i+1].entry.stall == 'Vacant'){
-          let start = new Date(state[i].timetoken/10000);
-          let end = new Date(state[i+1].timetoken/10000);
-          let duration = (end.getTime()-start.getTime())/60000;
-          if (duration > .33) {
+          let first = new Date(state[i].timetoken/10000);
+          let second = new Date(state[i+1].timetoken/10000);
+          let duration = (second.getTime()-first.getTime())/60000;
+          if (duration > 0.33) {
             total += duration;
             items ++;
           }
